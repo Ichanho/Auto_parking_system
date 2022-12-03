@@ -1,0 +1,366 @@
+#include <Servo.h>
+#include <IRremote.h>
+
+
+
+
+#define Trig1 30  //앞
+#define Echo1 31
+#define Trig2 32  // 앞 옆
+#define Echo2 33
+#define Trig3 34  // 뒤 옆
+#define Echo3 35
+#define Trig4 36  // 뒤
+#define Echo4 37
+
+#define center 82
+#define left 180
+#define right 0
+
+int distance1 = 0;
+int distance2 = 0;
+int distance3 = 0;
+int distance4 = 0;
+int i = 0;
+int j = 0;
+int k = 0;
+
+//--------------------------------
+const int irReceiverPin = A3;
+IRrecv irrecv(irReceiverPin); //create an IRrecv object
+decode_results decodedSignal; //stores results from IR sensor
+
+
+void init_IRreceiverModule()
+{
+   pinMode(irReceiverPin, INPUT); // 
+   irrecv.enableIRIn(); // Start the receiver object
+}
+
+struct IRvalueData
+{
+   String name;
+   unsigned long value; // 
+};
+
+IRvalueData irData[21]=
+{
+   { "0", 0xFF6897 },
+   { "1", 0xFF30CF },
+   { "2", 0xFF18E7 },
+   { "3", 0xFF7A85 },
+   { "4", 0xFF10EF },
+   { "5", 0xFF38C7 },
+   { "6", 0xFF5AA5 },
+   { "7", 0xFF42BD },
+   { "8", 0xFF4AB5 },
+   { "9", 0xFF52AD },
+   { "100+", 0xFF9867 },
+   { "200+", 0xFFB04F },
+   { "-", 0xFFE01F },
+   { "+", 0xFFA857 },
+   { "EQ", 0xFF906F },
+   { "<<", 0xFF22DD },
+   { ">>", 0xFF02FD },
+   { ">|", 0xFFC23D },
+   { "CH-", 0xFFA25D },
+   { "CH", 0xFF629D },
+   { "CH+", 0xFFE21D }
+};
+
+
+
+
+
+//
+String decode_IRvalue(unsigned long irValue)
+{
+   for (int i = 0; i < 21;i++)
+   {
+      if (irData[i].value==irValue)
+      { 
+         return irData[i].name;
+      }
+   }
+   Serial.println("Not Defined.");
+   return String("key Value None");
+}
+
+
+
+//
+// IR 수신값 처리.
+//
+void update_IRreceiverModule()
+{
+   // IR 수신값이 있는지 판단.
+   if (irrecv.decode(&decodedSignal) == true)
+   {
+      if (decodedSignal.bits > 0) // bit > 0 일 경우에만 수신값 체크.
+      {
+         Serial.println(decodedSignal.value);
+         
+      }
+      irrecv.resume(); // watch out for another message
+   }
+}
+
+
+//----------------------------------
+
+Servo servo;
+
+void setup() 
+{
+  Serial.begin(9600);
+  pinMode(Trig1, OUTPUT);
+  pinMode(Echo1, INPUT);
+  pinMode(Trig2, OUTPUT);
+  pinMode(Echo2, INPUT);
+  pinMode(Trig3, OUTPUT);
+  pinMode(Echo3, INPUT);
+  pinMode(Trig4, OUTPUT);
+  pinMode(Echo4, INPUT);
+  pinMode(7, OUTPUT);
+  pinMode(8, OUTPUT);
+  servo.attach(6);  
+  
+  init_IRreceiverModule();
+  
+}
+
+void ini(void)
+{
+  distance1 = 0;
+  distance2 = 0;
+  distance3 = 0;
+  distance4 = 0;
+  digitalWrite(8, LOW);   
+  digitalWrite(7, LOW);
+  servo.write(center);
+}
+
+void D_check(void)
+{
+  
+  digitalWrite(Trig1,HIGH);
+  delayMicroseconds(10);
+  digitalWrite(Trig1,LOW);
+  distance1 = pulseIn(Echo1, HIGH)/58.2;
+  //-------------------------------------  
+  digitalWrite(Trig2,HIGH);
+  delayMicroseconds(10);
+  digitalWrite(Trig2,LOW);
+  distance2= pulseIn(Echo2, HIGH)/58.2;
+  //-------------------------------------  
+  digitalWrite(Trig3,HIGH);
+  delayMicroseconds(10);
+  digitalWrite(Trig3,LOW);
+  distance3 = pulseIn(Echo3, HIGH)/58.2;
+  //-----------------------------------------  
+  digitalWrite(Trig4,HIGH);
+  delayMicroseconds(10);
+  digitalWrite(Trig4,LOW);
+  distance4 = pulseIn(Echo4, HIGH)/58.2;
+}
+
+void D_check1(void)
+{
+  digitalWrite(Trig1,HIGH);
+  delayMicroseconds(10);
+  digitalWrite(Trig1,LOW);
+  distance1 = pulseIn(Echo1, HIGH)/58.2;
+}
+
+void D_check2(void)
+{
+  digitalWrite(Trig2,HIGH);
+  delayMicroseconds(10);
+  digitalWrite(Trig2,LOW);
+  distance2 = pulseIn(Echo2, HIGH)/58.2;
+}
+
+void D_check3(void)
+{
+  digitalWrite(Trig3,HIGH);
+  delayMicroseconds(10);
+  digitalWrite(Trig3,LOW);
+  distance3 = pulseIn(Echo3, HIGH)/58.2;
+}
+
+void D_check4(void)
+{
+  digitalWrite(Trig4,HIGH);
+  delayMicroseconds(10);
+  digitalWrite(Trig4,LOW);
+  distance4 = pulseIn(Echo4, HIGH)/58.2;
+}
+
+
+void Stop(void)
+{
+  digitalWrite(8, LOW);   
+  digitalWrite(7, LOW);
+}
+
+void FF(void)
+{
+    digitalWrite(7, LOW);   
+    digitalWrite(8, HIGH);
+    digitalWrite(9, 254);
+}
+
+void BB(void)
+{
+  digitalWrite(7, HIGH);   
+  digitalWrite(8, LOW);
+  digitalWrite(9, 254);
+}
+
+void FL(void)
+{
+  servo.write(left);
+  FF();
+}
+
+void FR(void)
+{
+  servo.write(right);
+  FF();
+}
+
+void BL(void)
+{
+  servo.write(right);
+  BB();
+}
+
+void BR(void)
+{
+  servo.write(left);
+  BB();
+}
+
+void OF(void)
+{
+  D_check1();
+  if(distance1 <6)
+  {
+    Stop();
+  }
+  else
+  {
+    FF();
+  }
+}
+
+void F_OF(void)
+{
+  D_check1();
+  if(distance1 <6)
+  {
+    Stop();
+  }
+  else
+  {
+    digitalWrite(7, LOW);   
+    digitalWrite(8, HIGH);
+    digitalWrite(9, 100);
+  }
+}
+
+
+void loop() 
+{
+  ini();
+  update_IRreceiverModule();
+
+  
+  if(decodedSignal.value == 16724175)
+  {
+  while(i==0)
+  {
+    D_check1();
+    D_check2();
+    D_check3();
+    F_OF();
+    if(distance2 >= 20)
+    {
+      if(distance3 >= 20)
+      {
+        i = 20;
+      }
+    }
+    
+  }
+  Stop();
+  decodedSignal.value = 0;
+  i = 0;
+  }
+
+  // 주차
+  else if(decodedSignal.value == 16718055)
+  {
+  servo.write(center);
+  delay(500);
+  FF();
+  delay(2100);        // 주차공간을 찾은후 공간확보를 위해 앞으로감 
+  servo.write(right);
+  Stop();
+  delay(1000);
+  BB();
+  delay(1400);        //대각선으로 틀기
+  servo.write(left);
+  Stop();
+  delay(1000);
+  FF();
+  delay(1000);
+  servo.write(right);
+  Stop();
+  delay(1000);
+  servo.write(center);
+  Stop();
+  delay(1000);
+  BB();
+  delay(2100);
+  Stop();            // 대각선완료
+  delay(1000);
+
+  // 집어넣기
+  servo.write(left);
+  Stop();           
+  delay(2000);      
+  BB();
+  delay(700);    
+  
+  Stop();
+  delay(1000);
+  servo.write(right);
+  delay(1000);
+  FF();
+  delay(510);//---------------------------
+  Stop();
+  servo.write(left);  
+  delay(1300);
+  BB();
+  delay(550);
+  Stop();
+  servo.write(right); 
+  delay(1300);
+  FF();
+  delay(500);
+  Stop();
+  servo.write(left);  
+  delay(1300);
+  BB();
+  delay(400);
+ 
+  Stop();
+  servo.write(center); 
+  delay(900);
+
+    Stop();
+    decodedSignal.value = 0;
+  }
+ 
+}

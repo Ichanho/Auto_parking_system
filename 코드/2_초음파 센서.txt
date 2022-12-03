@@ -1,0 +1,17 @@
+#define Trig 8
+#define Echo 7
+void setup() {
+  Serial.begin(9600);
+ pinMode(Trig, OUTPUT);
+ pinMode(Echo, INPUT);
+}
+
+void loop() {
+  int distance = 0;
+  digitalWrite(Trig,HIGH);
+  delayMicroseconds(10);
+  digitalWrite(Trig,LOW);
+  distance = pulseIn(Echo, HIGH)/58.2;
+  Serial.println(distance);
+  delay(1000);
+}
